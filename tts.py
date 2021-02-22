@@ -140,6 +140,21 @@ class MicrosoftProvider(Provider):
 
     def get_tts_audio(self, message, language, options=None):
         """Load TTS from Microsoft."""
+        options_schema = vol.Schema(
+            {
+                vol.Optional(CONF_GENDER, default=self._gender): vol.In(GENDERS),
+                vol.Optional(CONF_TYPE, default=self._type): cv.string,
+                vol.Optional(CONF_RATE, default=self._rate): vol.All(
+                    vol.Coerce(int), vol.Range(-100, 100)
+                ),
+                vol.Optional(CONF_VOLUME, default=self._volume): vol.All(
+                    vol.Coerce(int), vol.Range(-100, 100)
+                ),
+                vol.Optional(CONF_PITCH, default=self._pitch): cv.string,
+                vol.Optional(CONF_CONTOUR, default=self._contour): cv.string,
+            }
+        )
+        options = options_schema(options)        
         if language is None:
             language = self._lang
 
@@ -147,13 +162,13 @@ class MicrosoftProvider(Provider):
             trans = pycsspeechtts.TTSTranslator(self._apikey, self._region)
             data = trans.speak(
                 language=language,
-                gender=self._gender,
-                voiceType=self._type,
+                gender=options[CONF_GENDER],
+                voiceType=options[CONF_TYPE],
                 output=self._output,
-                rate=self._rate,
-                volume=self._volume,
-                pitch=self._pitch,
-                contour=self._contour,
+                rate=options[CONF_RATE],
+                volume=options[CONF_VOLUME],
+                pitch=options[CONF_PITCH],
+                contour=options[CONF_CONTOUR],
                 text=message,
             )
         except HTTPException as ex:
