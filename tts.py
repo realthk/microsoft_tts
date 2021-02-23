@@ -75,6 +75,15 @@ DEFAULT_PITCH = "default"
 DEFAULT_CONTOUR = ""
 DEFAULT_REGION = "eastus"
 
+SUPPORTED_OPTIONS = [
+    CONF_GENDER,
+    CONF_TYPE,
+    CONF_RATE,
+    CONF_VOLUME,
+    CONF_PITCH,
+    CONF_CONTOUR,
+]
+
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_API_KEY): cv.string,
@@ -138,23 +147,25 @@ class MicrosoftProvider(Provider):
         """Return list of supported languages."""
         return SUPPORTED_LANGUAGES
 
+    @property
+    def supported_options(self):
+        """Return a list of supported options."""
+        return SUPPORTED_OPTIONS
+
+    @property
+    def default_options(self):
+        """Return a dict including default options."""
+        return {
+            CONF_GENDER: self._gender,
+            CONF_TYPE: self._type,
+            CONF_RATE: self._rate,
+            CONF_VOLUME: self._volume,
+            CONF_PITCH: self._pitch,
+            CONF_CONTOUR: self._contour,
+        }
+
     def get_tts_audio(self, message, language, options=None):
         """Load TTS from Microsoft."""
-        options_schema = vol.Schema(
-            {
-                vol.Optional(CONF_GENDER, default=self._gender): vol.In(GENDERS),
-                vol.Optional(CONF_TYPE, default=self._type): cv.string,
-                vol.Optional(CONF_RATE, default=self._rate): vol.All(
-                    vol.Coerce(int), vol.Range(-100, 100)
-                ),
-                vol.Optional(CONF_VOLUME, default=self._volume): vol.All(
-                    vol.Coerce(int), vol.Range(-100, 100)
-                ),
-                vol.Optional(CONF_PITCH, default=self._pitch): cv.string,
-                vol.Optional(CONF_CONTOUR, default=self._contour): cv.string,
-            }
-        )
-        options = options_schema(options)        
         if language is None:
             language = self._lang
 
@@ -162,13 +173,13 @@ class MicrosoftProvider(Provider):
             trans = pycsspeechtts.TTSTranslator(self._apikey, self._region)
             data = trans.speak(
                 language=language,
-                gender=options[CONF_GENDER],
-                voiceType=options[CONF_TYPE],
+                gender=self._gender,
+                voiceType=self._type,
                 output=self._output,
-                rate=options[CONF_RATE],
-                volume=options[CONF_VOLUME],
-                pitch=options[CONF_PITCH],
-                contour=options[CONF_CONTOUR],
+                rate=self._rate,
+                volume=self._volume,
+                pitch=self._pitch,
+                contour=self._contour,
                 text=message,
             )
         except HTTPException as ex:
